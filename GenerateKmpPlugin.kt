@@ -2,7 +2,6 @@
 //DEPS org.jline:jline:3.26.2
 //DEPS com.samskivert:jmustache:1.16
 //DEPS org.json:json:20240303
-//FILES templates/
 
 import com.samskivert.mustache.Mustache
 import org.jline.reader.LineReaderBuilder
