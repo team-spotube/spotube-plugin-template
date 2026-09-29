@@ -2,6 +2,7 @@
 //DEPS org.jline:jline:3.26.2
 //DEPS com.samskivert:jmustache:1.16
 //DEPS org.json:json:20240303
+//FILES templates/
 
 import com.samskivert.mustache.Mustache
 import org.jline.reader.LineReaderBuilder
@@ -10,9 +11,11 @@ import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import java.io.File
+import java.net.JarURLConnection
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
+import java.util.jar.JarFile
 import java.util.concurrent.Callable
 
 private val serviceIdPattern = Regex("[a-z][a-z0-9]*(?:_[a-z0-9]+)*")
@@ -105,24 +108,28 @@ class GenerateKmpPluginCommand : Callable<Int> {
         val config = collectConfig()
         validate(config)
 
-        val templateRoot = Path.of("templates").toAbsolutePath().normalize()
-        require(Files.isDirectory(templateRoot)) { "templates/ was not found; run the generator from the repository root." }
-
         val destination = (output ?: Path.of(config.moduleName)).toAbsolutePath().normalize()
         require(!Files.exists(destination)) { "output directory already exists: $destination" }
-        require(destination != templateRoot && !destination.startsWith(templateRoot)) {
-            "output directory cannot be the templates directory or a child of it."
-        }
-        require(!templateRoot.startsWith(destination)) { "output directory cannot contain the templates directory." }
 
+        val templates = locateTemplateDirectory()
         val generatedFileCount = try {
-            val count = TemplateEngine(config.templateModel()).processTemplateDirectory(templateRoot.toFile(), destination.toFile())
-            validateGeneratedProject(destination.toFile(), config)
-            initializeGit(destination.toFile())
-            count
-        } catch (error: Exception) {
-            destination.toFile().deleteRecursively()
-            throw error
+            val templateRoot = templates.root.toPath().toAbsolutePath().normalize()
+            require(destination != templateRoot && !destination.startsWith(templateRoot)) {
+                "output directory cannot be the templates directory or a child of it."
+            }
+            require(!templateRoot.startsWith(destination)) { "output directory cannot contain the templates directory." }
+
+            try {
+                val count = TemplateEngine(config.templateModel()).processTemplateDirectory(templates.root, destination.toFile())
+                validateGeneratedProject(destination.toFile(), config)
+                initializeGit(destination.toFile())
+                count
+            } catch (error: Exception) {
+                destination.toFile().deleteRecursively()
+                throw error
+            }
+        } finally {
+            templates.cleanupRoot?.deleteRecursively()
         }
 
         println("✅ Generated Spotube Plugin Scaffold: '${config.moduleName}'")
@@ -261,6 +268,84 @@ private fun parseFeatures(values: List<String>): Set<PluginFeature> {
     }.toSet()
     require(selected.isNotEmpty()) { "select at least one plugin API capability." }
     return selected
+}
+
+private data class LocatedTemplates(val root: File, val cleanupRoot: File? = null)
+
+private fun locateTemplateDirectory(): LocatedTemplates {
+    val workingDirectoryTemplates = File("templates")
+    if (isTemplateDirectory(workingDirectoryTemplates) && File("GenerateKmpPlugin.kt").isFile) {
+        return LocatedTemplates(workingDirectoryTemplates)
+    }
+
+    val embeddedTemplateResource = GenerateKmpPluginCommand::class.java.classLoader.getResource("templates")
+    if (embeddedTemplateResource != null) {
+        when (embeddedTemplateResource.protocol) {
+            "file" -> {
+                val resourceDirectory = File(embeddedTemplateResource.toURI())
+                if (resourceDirectory.isDirectory) return LocatedTemplates(resourceDirectory)
+            }
+            "jar" -> {
+                val connection = embeddedTemplateResource.openConnection() as JarURLConnection
+                connection.useCaches = false
+                val extracted = connection.jarFile.use(::extractEmbeddedTemplates)
+                if (extracted != null) return extracted
+            }
+        }
+    }
+
+    val codeLocation = File(GenerateKmpPluginCommand::class.java.protectionDomain.codeSource.location.toURI())
+    if (codeLocation.isDirectory) {
+        val adjacentTemplates = File(codeLocation, "templates")
+        if (isTemplateDirectory(adjacentTemplates)) return LocatedTemplates(adjacentTemplates)
+    }
+
+    if (codeLocation.isFile) JarFile(codeLocation).use(::extractEmbeddedTemplates)?.let { return it }
+
+    if (isTemplateDirectory(workingDirectoryTemplates)) return LocatedTemplates(workingDirectoryTemplates)
+
+    val extractionRoot = Files.createTempDirectory("spotube-plugin-template-repository-").toFile()
+    val checkout = File(extractionRoot, "repository")
+    val repository = System.getenv("SPOTUBE_PLUGIN_TEMPLATE_REPOSITORY")
+        ?: "https://github.com/team-spotube/spotube-plugin-template.git"
+    val process = ProcessBuilder("git", "clone", "--depth=1", repository, checkout.absolutePath)
+        .redirectErrorStream(true)
+        .start()
+    val cloneOutput = process.inputStream.bufferedReader().use { it.readText() }
+    if (process.waitFor() == 0) {
+        val clonedTemplates = File(checkout, "templates")
+        if (isTemplateDirectory(clonedTemplates)) return LocatedTemplates(clonedTemplates, extractionRoot)
+    }
+
+    extractionRoot.deleteRecursively()
+    throw IllegalArgumentException(
+        "templates/ was not found locally or embedded in this script, and cloning $repository failed. " +
+            "Check Git/network access or set SPOTUBE_PLUGIN_TEMPLATE_REPOSITORY. $cloneOutput"
+    )
+}
+
+private fun isTemplateDirectory(directory: File): Boolean =
+    directory.isDirectory && File(directory, "{{moduleName}}/build.gradle.kts").isFile
+
+private fun extractEmbeddedTemplates(jar: JarFile): LocatedTemplates? {
+    val extractionRoot = Files.createTempDirectory("spotube-plugin-templates-").toFile()
+    var copiedEntries = 0
+    val entries = jar.entries()
+    while (entries.hasMoreElements()) {
+        val entry = entries.nextElement()
+        if (entry.isDirectory || !entry.name.startsWith("templates/")) continue
+
+        val target = File(extractionRoot, entry.name).normalize()
+        require(target.toPath().startsWith(extractionRoot.toPath())) { "invalid embedded template path: ${entry.name}" }
+        target.parentFile.mkdirs()
+        jar.getInputStream(entry).use { input -> target.outputStream().use { output -> input.copyTo(output) } }
+        copiedEntries++
+    }
+
+    val embeddedTemplates = File(extractionRoot, "templates")
+    if (copiedEntries > 0 && embeddedTemplates.isDirectory) return LocatedTemplates(embeddedTemplates, extractionRoot)
+    extractionRoot.deleteRecursively()
+    return null
 }
 
 private fun validateGeneratedProject(destination: File, config: PluginConfig) {
