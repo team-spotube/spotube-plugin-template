@@ -1,0 +1,8 @@
+{
+  "aliases": {
+    "create": {
+      "script-ref": "GenerateKmpPlugin.kt",
+      "description": "Scaffold a Spotube KMP provider plugin repository"
+    }
+  }
+}

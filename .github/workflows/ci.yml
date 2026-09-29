@@ -1,0 +1,88 @@
+name: Generator CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  generate-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install JBang
+        run: |
+          curl -Ls https://sh.jbang.dev | bash -s - app setup
+          echo "$HOME/.jbang/bin" >> "$GITHUB_PATH"
+
+      - name: Generate sample plugin through catalog
+        run: |
+          jbang create@. \
+            --service=ci_test \
+            --author=io.github.test \
+            --display-name=CiTest \
+            --capabilities=metadata,audio,lyrics,scrobble \
+            --output=spotube_plugin_ci_test
+          jbang create@. \
+            --service=ci_lyrics \
+            --author=io.github.test \
+            --display-name=CiLyrics \
+            --capabilities=lyrics,scrobble \
+            --output=spotube_plugin_lyrics_only
+
+      - name: Validate generated project
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("spotube_plugin_ci_test")
+          module = root / "spotube_plugin_ci_test"
+          build_file = (module / "build.gradle.kts").read_text()
+          assert 'spotubePlugin {' in build_file
+          assert 'name = "CiTest"' in build_file
+          assert 'author = "io.github.test"' in build_file
+          assert 'PluginCapability.NETWORK_REQUESTS' in build_file
+          assert 'PluginAbility.METADATA' in build_file
+          assert 'PluginAbility.AUDIO' in build_file
+          assert 'PluginAbility.LYRICS' in build_file
+          assert 'PluginAbility.SCROBBLE' in build_file
+          assert (module / "src/commonMain/kotlin/io/github/test/spotube_plugin_ci_test/core/CiTest.kt").is_file()
+          assert (module / "src/commonMain/kotlin/io/github/test/spotube_plugin_ci_test/core/model/CiTestModels.kt").is_file()
+          assert (module / "src/commonMain/kotlin/io/github/test/spotube_plugin_ci_test/metadata/RealMetadataTrackAPI.kt").is_file()
+          assert (module / "src/commonMain/kotlin/io/github/test/spotube_plugin_ci_test/audio/RealAudioAPI.kt").is_file()
+          assert (module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_test/plugin_apis/lyrics/RealLyricsAPI.kt").is_file()
+          assert (module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_test/plugin_apis/scrobble/RealScrobbleAPI.kt").is_file()
+          assert (module / "src/jvmTest/kotlin/io/github/test/spotube_plugin_ci_test/audio/RealAudioAPITest.kt").is_file()
+          assert (module / "src/jvmTest/kotlin/io/github/test/spotube_plugin_ci_test/metadata/RealMetadataTrackAPITest.kt").is_file()
+          assert (module / "src/jvmTest/kotlin/io/github/test/spotube_plugin_ci_test/lyrics/RealLyricsAPITest.kt").is_file()
+          assert (module / "src/jvmTest/kotlin/io/github/test/spotube_plugin_ci_test/scrobble/RealScrobbleAPITest.kt").is_file()
+          assert not (module / "plugin.json").exists()
+          assert (root / "settings.gradle.kts").is_file()
+          assert 'include(":spotube_plugin_ci_test")' in (root / "settings.gradle.kts").read_text()
+          build_file = (module / "build.gradle.kts").read_text()
+          assert 'mainFunction.set("io.github.test.spotube_plugin_ci_test.main")' in build_file
+          js_entry = (module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_test/js.kt").read_text()
+          assert 'zipline.bind<LyricsAPI>(LyricsAPI_SERVICE_NAME, RealLyricsAPI())' in js_entry
+          assert 'zipline.bind<ScrobbleAPI>(ScrobbleAPI_SERVICE_NAME, RealScrobbleAPI())' in js_entry
+          assert (root / "gradlew").stat().st_mode & 0o111
+          assert not any(marker in str(path) for path in root.rglob("*") for marker in ("{{", "__packagePath__", "__moduleName__", "__serviceClassName__"))
+
+          lyrics_root = Path("spotube_plugin_lyrics_only")
+          lyrics_module = lyrics_root / "spotube_plugin_ci_lyrics"
+          assert (lyrics_module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_lyrics/plugin_apis/lyrics/RealLyricsAPI.kt").is_file()
+          assert (lyrics_module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_lyrics/plugin_apis/scrobble/RealScrobbleAPI.kt").is_file()
+          assert not (lyrics_module / "src/commonMain/kotlin/io/github/test/spotube_plugin_ci_lyrics/audio").exists()
+          assert not (lyrics_module / "src/jvmTest/kotlin/io/github/test/spotube_plugin_ci_lyrics/metadata").exists()
+          lyrics_js = (lyrics_module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_lyrics/js.kt").read_text()
+          assert "RealLyricsAPI" in lyrics_js and "RealScrobbleAPI" in lyrics_js
+          assert "RealMetadataAlbumAPI" not in lyrics_js and "RealAudioAPI" not in lyrics_js
+          PY
+
+      - name: Verify generated Gradle wrapper
+        run: ./spotube_plugin_ci_test/gradlew --version
