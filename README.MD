@@ -16,23 +16,37 @@ From a local checkout, run the interactive wizard:
 jbang GenerateKmpPlugin.kt
 ```
 
-Or provide the service identity and API selection directly:
+The wizard asks for a service ID, author package group, display name, contact, repository URL, bugs URL, and one or more APIs. Press Enter at the API prompt to select Metadata and Audio; the bugs URL defaults to `<repository>/issues`.
+
+You can also supply all values directly:
 
 ```bash
 jbang GenerateKmpPlugin.kt \
   --service lastfm \
   --author cc.spotube.lastfm \
   --display-name "Last.fm" \
+  --contact "maintainer@example.com" \
+  --repository https://github.com/owner/spotube-plugin-lastfm \
+  --bugs https://github.com/owner/spotube-plugin-lastfm/issues \
   --capabilities metadata,audio,lyrics,scrobble \
   --output spotube_plugin_lastfm
 ```
 
-The wizard prompts for a service ID, author package group, display name, and one or more APIs: `metadata`, `audio`, `lyrics`, and `scrobble`. Press Enter at the API prompt to select Metadata and Audio. If `--output` is omitted, the project is created in `./spotube_plugin_<service-id>`. Existing output directories are not overwritten.
+The contact can be an email address or maintainer label. Repository and bugs URLs must be HTTP or HTTPS. `--capabilities` accepts a comma-separated, non-empty combination of `metadata`, `audio`, `lyrics`, and `scrobble`; `--bugs` may be omitted to use the repository's `/issues` URL. Existing output directories are not overwritten. The default output is `./spotube_plugin_<service-id>`.
 
-For a published JBang catalog, the generator is also available as:
+## JBang catalog
+
+For a published catalog, run:
 
 ```bash
-jbang create@team-spotube/spotube-plugin-template --service lastfm --author cc.spotube.lastfm --display-name "Last.fm" --capabilities metadata,audio
+jbang create@team-spotube/spotube-plugin-template \
+  --service lastfm \
+  --author cc.spotube.lastfm \
+  --display-name "Last.fm" \
+  --contact "maintainer@example.com" \
+  --repository https://github.com/owner/spotube-plugin-lastfm \
+  --bugs https://github.com/owner/spotube-plugin-lastfm/issues \
+  --capabilities metadata,audio
 ```
 
-Use `jbang GenerateKmpPlugin.kt --help` for all options. Generated projects initialize their own Git repository. Logos and provider-specific endpoints can be added or customized after generation.
+From a local checkout, use `jbang create@.` instead. Use `jbang GenerateKmpPlugin.kt --help` for all options. Generated projects initialize their own Git repository. Logos and provider-specific endpoints can be customized after generation.

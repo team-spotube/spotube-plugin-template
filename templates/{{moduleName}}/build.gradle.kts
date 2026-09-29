@@ -17,6 +17,9 @@ spotubePlugin {
     apiVersion = "0.0.1"
     description = "Spotube music service provider plugin for {{serviceDisplayNameKotlin}}"
     author = "{{authorGroupKotlin}}"
+    contact = "{{contactKotlin}}"
+    repository = "{{repositoryUrlKotlin}}"
+    bugs = "{{bugsUrlKotlin}}"
     capabilities = listOf(
         PluginCapability.NETWORK_REQUESTS,
         PluginCapability.PERSISTENT_STORAGE,

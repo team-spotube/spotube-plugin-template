@@ -25,7 +25,7 @@ Use Java 21 and verify changes with:
 
 ```bash
 jbang GenerateKmpPlugin.kt --help
-jbang GenerateKmpPlugin.kt --service ci_test --author io.github.test --display-name CiTest --capabilities metadata,audio,lyrics,scrobble --output /tmp/spotube-plugin-ci-test
+jbang GenerateKmpPlugin.kt --service ci_test --author io.github.test --display-name CiTest --contact ci@example.com --repository https://github.com/team-spotube/spotube-plugin-template --bugs https://github.com/team-spotube/spotube-plugin-template/issues --capabilities metadata,audio,lyrics,scrobble --output /tmp/spotube-plugin-ci-test
 ```
 
 Also verify a partial selection (for example, `--capabilities lyrics,scrobble`) omits unselected APIs and their test directories. Do not copy repository metadata or this generator into generated plugin projects.

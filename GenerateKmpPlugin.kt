@@ -11,6 +11,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import java.io.File
 import java.net.JarURLConnection
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
@@ -42,6 +43,9 @@ private data class PluginConfig(
     val serviceId: String,
     val authorGroup: String,
     val serviceDisplayName: String,
+    val contact: String,
+    val repositoryUrl: String,
+    val bugsUrl: String,
     val features: Set<PluginFeature>,
 ) {
     val moduleName: String = "spotube_plugin_$serviceId"
@@ -56,6 +60,9 @@ private data class PluginConfig(
     fun templateModel(): MutableMap<String, Any> = mutableMapOf(
         "serviceId" to serviceId,
         "serviceDisplayName" to serviceDisplayName,
+        "contact" to contact,
+        "repositoryUrl" to repositoryUrl,
+        "bugsUrl" to bugsUrl,
         "serviceClassName" to serviceClassName,
         "authorGroup" to authorGroup,
         "moduleName" to moduleName,
@@ -75,6 +82,9 @@ private data class PluginConfig(
         ),
         "serviceDisplayNameKotlin" to jsonStringContent(serviceDisplayName),
         "authorGroupKotlin" to jsonStringContent(authorGroup),
+        "contactKotlin" to jsonStringContent(contact),
+        "repositoryUrlKotlin" to jsonStringContent(repositoryUrl),
+        "bugsUrlKotlin" to jsonStringContent(bugsUrl),
     )
 }
 
@@ -88,6 +98,15 @@ class GenerateKmpPluginCommand : Callable<Int> {
 
     @field:Option(names = ["-d", "--display-name"], paramLabel = "NAME", description = ["User-facing service name."])
     var displayName: String? = null
+
+    @field:Option(names = ["--contact"], paramLabel = "CONTACT", description = ["Plugin maintainer contact, such as an email address."])
+    var contact: String? = null
+
+    @field:Option(names = ["--repository"], paramLabel = "URL", description = ["HTTP(S) source repository URL."])
+    var repositoryUrl: String? = null
+
+    @field:Option(names = ["--bugs"], paramLabel = "URL", description = ["HTTP(S) issue tracker URL."])
+    var bugsUrl: String? = null
 
     @field:Option(
         names = ["-c", "--capabilities"],
@@ -152,9 +171,11 @@ class GenerateKmpPluginCommand : Callable<Int> {
 
     private fun collectConfig(): PluginConfig {
         val reader by lazy { LineReaderBuilder.builder().build() }
-        fun prompt(value: String?, promptText: String): String {
+        fun prompt(value: String?, promptText: String, defaultValue: String? = null): String {
             if (value != null) return value.trim()
-            return reader.readLine("$promptText ").trim()
+            val defaultLabel = defaultValue?.let { " [$it]" }.orEmpty()
+            val answer = reader.readLine("$promptText$defaultLabel ").trim()
+            return answer.ifEmpty { defaultValue.orEmpty() }
         }
 
         val serviceId = prompt(service, "Enter Service ID (e.g., soundcloud):")
@@ -163,6 +184,16 @@ class GenerateKmpPluginCommand : Callable<Int> {
         require(authorGroup.isNotBlank()) { "author group is required (use -a/--author)." }
         val displayName = prompt(displayName, "Enter Service Display Name (e.g., SoundCloud):")
         require(displayName.isNotBlank()) { "service display name is required (use -d/--display-name)." }
+        val contactValue = prompt(contact, "Enter Contact (e.g., maintainer email):")
+        val repositoryValue = prompt(repositoryUrl, "Enter Repository URL (HTTP or HTTPS):")
+        val bugsDefault = "${repositoryValue.trimEnd('/').removeSuffix(".git")}/issues"
+        val canDeriveBugsNonInteractively = bugsUrl == null && service != null && author != null &&
+            this.displayName != null && contact != null && repositoryUrl != null && capabilities.isNotEmpty()
+        val bugsValue = if (canDeriveBugsNonInteractively) {
+            bugsDefault
+        } else {
+            prompt(bugsUrl, "Enter Bugs URL (HTTP or HTTPS):", bugsDefault)
+        }
 
         val selectedFeatures = if (capabilities.isNotEmpty()) {
             parseFeatures(capabilities)
@@ -175,7 +206,15 @@ class GenerateKmpPluginCommand : Callable<Int> {
             parseFeatures(entered.ifBlank { "metadata,audio" }.split(','))
         }
 
-        return PluginConfig(serviceId, authorGroup, displayName, selectedFeatures)
+        return PluginConfig(
+            serviceId = serviceId,
+            authorGroup = authorGroup,
+            serviceDisplayName = displayName,
+            contact = contactValue,
+            repositoryUrl = repositoryValue,
+            bugsUrl = bugsValue,
+            features = selectedFeatures,
+        )
     }
 }
 
@@ -253,7 +292,19 @@ private fun validate(config: PluginConfig) {
     }
     require(config.serviceDisplayName.isNotBlank()) { "service display name cannot be blank." }
     require(config.serviceDisplayName.none { it == '\n' || it == '\r' }) { "service display name cannot contain line breaks." }
+    require(config.contact.isNotBlank() && config.contact.none { it == '\n' || it == '\r' }) {
+        "contact is required and cannot contain line breaks."
+    }
+    validateHttpUrl(config.repositoryUrl, "repository")
+    validateHttpUrl(config.bugsUrl, "bugs")
     require(config.features.isNotEmpty()) { "select at least one plugin API capability." }
+}
+
+private fun validateHttpUrl(value: String, fieldName: String) {
+    val uri = runCatching { URI(value) }.getOrNull()
+    require(uri != null && uri.scheme?.lowercase(Locale.ROOT) in setOf("http", "https") && !uri.host.isNullOrBlank()) {
+        "$fieldName must be a valid HTTP or HTTPS URL."
+    }
 }
 
 private fun parseFeatures(values: List<String>): Set<PluginFeature> {
@@ -356,6 +407,15 @@ private fun validateGeneratedProject(destination: File, config: PluginConfig) {
     }
     require("author = \"${jsonStringContent(config.authorGroup)}\"" in moduleBuildFile) {
         "generated Spotube plugin author does not match the requested author group."
+    }
+    require("contact = \"${jsonStringContent(config.contact)}\"" in moduleBuildFile) {
+        "generated Spotube plugin contact does not match the requested contact."
+    }
+    require("repository = \"${jsonStringContent(config.repositoryUrl)}\"" in moduleBuildFile) {
+        "generated Spotube plugin repository does not match the requested repository URL."
+    }
+    require("bugs = \"${jsonStringContent(config.bugsUrl)}\"" in moduleBuildFile) {
+        "generated Spotube plugin bugs URL does not match the requested URL."
     }
 
     val classFile = File(moduleRoot, "src/commonMain/kotlin/${config.packagePath}/core/${config.serviceClassName}.kt")

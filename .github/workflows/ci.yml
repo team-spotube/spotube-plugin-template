@@ -27,12 +27,18 @@ jobs:
             --service=ci_test \
             --author=io.github.test \
             --display-name=CiTest \
+            --contact=ci@example.com \
+            --repository=https://github.com/team-spotube/spotube-plugin-template \
+            --bugs=https://github.com/team-spotube/spotube-plugin-template/issues \
             --capabilities=metadata,audio,lyrics,scrobble \
             --output=spotube_plugin_ci_test
           jbang create@. \
             --service=ci_lyrics \
             --author=io.github.test \
             --display-name=CiLyrics \
+            --contact=ci@example.com \
+            --repository=https://github.com/team-spotube/spotube-plugin-template \
+            --bugs=https://github.com/team-spotube/spotube-plugin-template/issues \
             --capabilities=lyrics,scrobble \
             --output=spotube_plugin_lyrics_only
 
@@ -47,6 +53,9 @@ jobs:
           assert 'spotubePlugin {' in build_file
           assert 'name = "CiTest"' in build_file
           assert 'author = "io.github.test"' in build_file
+          assert 'contact = "ci@example.com"' in build_file
+          assert 'repository = "https://github.com/team-spotube/spotube-plugin-template"' in build_file
+          assert 'bugs = "https://github.com/team-spotube/spotube-plugin-template/issues"' in build_file
           assert 'PluginCapability.NETWORK_REQUESTS' in build_file
           assert 'PluginAbility.METADATA' in build_file
           assert 'PluginAbility.AUDIO' in build_file
