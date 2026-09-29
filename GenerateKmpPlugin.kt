@@ -153,7 +153,7 @@ class GenerateKmpPluginCommand : Callable<Int> {
 
         val serviceId = prompt(service, "Enter Service ID (e.g., soundcloud):")
         require(serviceId.isNotBlank()) { "service ID is required (use -s/--service)." }
-        val authorGroup = prompt(author, "Enter Author Group (e.g., io.github.piper_plumber):")
+        val authorGroup = prompt(author, "Enter Author Group (e.g., io.github.KRTirtho):")
         require(authorGroup.isNotBlank()) { "author group is required (use -a/--author)." }
         val displayName = prompt(displayName, "Enter Service Display Name (e.g., SoundCloud):")
         require(displayName.isNotBlank()) { "service display name is required (use -d/--display-name)." }
