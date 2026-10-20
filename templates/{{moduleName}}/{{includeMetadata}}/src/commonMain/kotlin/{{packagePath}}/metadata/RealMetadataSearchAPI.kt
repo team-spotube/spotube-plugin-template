@@ -1,10 +1,10 @@
 package {{packageName}}.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSupportedSearchType
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSupportedSearchType
 import {{packageName}}.core.{{serviceClassName}}
 
 class RealMetadataSearchAPI(private val service: {{serviceClassName}}) : MetadataSearchAPI {

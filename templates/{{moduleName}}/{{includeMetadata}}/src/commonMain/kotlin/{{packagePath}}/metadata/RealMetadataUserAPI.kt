@@ -1,7 +1,7 @@
 package {{packageName}}.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
 import {{packageName}}.core.{{serviceClassName}}
 
 class RealMetadataUserAPI(private val service: {{serviceClassName}}) : MetadataUserAPI {

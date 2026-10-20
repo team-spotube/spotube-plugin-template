@@ -1,32 +1,32 @@
 package {{packageName}}
 
 import app.cash.zipline.Zipline
-import dev.krtirtho.plugin_interfaces.core.runPluginInitialized
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.host_apis.PersistedStorageAPI
-import dev.krtirtho.plugin_interfaces.host_apis.PersistedStorageAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.host_apis.WebViewAPI
-import dev.krtirtho.plugin_interfaces.host_apis.WebViewAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.CoreAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.CoreAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.core.runPluginInitialized
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.host_apis.PersistedStorageAPI
+import org.spotube.plugin_interfaces.host_apis.PersistedStorageAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.host_apis.WebViewAPI
+import org.spotube.plugin_interfaces.host_apis.WebViewAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.core.CoreAPI
+import org.spotube.plugin_interfaces.plugin_apis.core.CoreAPI_SERVICE_NAME
 import {{packageName}}.core.{{serviceClassName}}
 import {{packageName}}.core.RealCoreAPI
 {{#includeMetadata}}
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrackAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrackAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrackAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrackAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI_SERVICE_NAME
 import {{packageName}}.metadata.RealMetadataAlbumAPI
 import {{packageName}}.metadata.RealMetadataArtistAPI
 import {{packageName}}.metadata.RealMetadataBrowseAPI
@@ -36,20 +36,20 @@ import {{packageName}}.metadata.RealMetadataTrackAPI
 import {{packageName}}.metadata.RealMetadataUserAPI
 {{/includeMetadata}}
 {{#includeAudio}}
-import dev.krtirtho.plugin_interfaces.host_apis.CryptoAPI
-import dev.krtirtho.plugin_interfaces.host_apis.CryptoAPI_SERVICE_NAME
-import dev.krtirtho.plugin_interfaces.plugin_apis.audio.AudioAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.audio.AudioAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.host_apis.CryptoAPI
+import org.spotube.plugin_interfaces.host_apis.CryptoAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.audio.AudioAPI
+import org.spotube.plugin_interfaces.plugin_apis.audio.AudioAPI_SERVICE_NAME
 import {{packageName}}.audio.RealAudioAPI
 {{/includeAudio}}
 {{#includeLyrics}}
-import dev.krtirtho.plugin_interfaces.plugin_apis.lyrics.LyricsAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.lyrics.LyricsAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.lyrics.LyricsAPI
+import org.spotube.plugin_interfaces.plugin_apis.lyrics.LyricsAPI_SERVICE_NAME
 import {{packageName}}.plugin_apis.lyrics.RealLyricsAPI
 {{/includeLyrics}}
 {{#includeScrobble}}
-import dev.krtirtho.plugin_interfaces.plugin_apis.scrobble.ScrobbleAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.scrobble.ScrobbleAPI_SERVICE_NAME
+import org.spotube.plugin_interfaces.plugin_apis.scrobble.ScrobbleAPI
+import org.spotube.plugin_interfaces.plugin_apis.scrobble.ScrobbleAPI_SERVICE_NAME
 import {{packageName}}.plugin_apis.scrobble.RealScrobbleAPI
 {{/includeScrobble}}
 

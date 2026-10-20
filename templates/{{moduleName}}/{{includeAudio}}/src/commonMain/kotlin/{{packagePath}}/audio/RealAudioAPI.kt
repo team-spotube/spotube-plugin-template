@@ -1,10 +1,10 @@
 package {{packageName}}.audio
 
-import dev.krtirtho.plugin_interfaces.host_apis.CryptoAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.audio.AudioAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.audio.AudioFormat
-import dev.krtirtho.plugin_interfaces.plugin_apis.audio.AudioSource
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.plugin_interfaces.host_apis.CryptoAPI
+import org.spotube.plugin_interfaces.plugin_apis.audio.AudioAPI
+import org.spotube.plugin_interfaces.plugin_apis.audio.AudioFormat
+import org.spotube.plugin_interfaces.plugin_apis.audio.AudioSource
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
 import {{packageName}}.core.{{serviceClassName}}
 
 class RealAudioAPI(

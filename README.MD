@@ -23,7 +23,7 @@ You can also supply all values directly:
 ```bash
 jbang GenerateKmpPlugin.kt \
   --service lastfm \
-  --author cc.spotube.lastfm \
+  --author org.spotube.lastfm \
   --display-name "Last.fm" \
   --contact "maintainer@example.com" \
   --repository https://github.com/owner/spotube-plugin-lastfm \
@@ -41,7 +41,7 @@ For a published catalog, run:
 ```bash
 jbang create@team-spotube/spotube-plugin-template \
   --service lastfm \
-  --author cc.spotube.lastfm \
+  --author org.spotube.lastfm \
   --display-name "Last.fm" \
   --contact "maintainer@example.com" \
   --repository https://github.com/owner/spotube-plugin-lastfm \

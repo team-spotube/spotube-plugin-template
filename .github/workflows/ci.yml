@@ -79,6 +79,12 @@ jobs:
           js_entry = (module / "src/jsMain/kotlin/io/github/test/spotube_plugin_ci_test/js.kt").read_text()
           assert 'zipline.bind<LyricsAPI>(LyricsAPI_SERVICE_NAME, RealLyricsAPI())' in js_entry
           assert 'zipline.bind<ScrobbleAPI>(ScrobbleAPI_SERVICE_NAME, RealScrobbleAPI())' in js_entry
+          versions = (root / "gradle/libs.versions.toml").read_text()
+          assert 'id = "org.spotube.gradle-plugin"' in versions
+          assert 'module = "org.spotube.spotube:plugin_interfaces"' in versions
+          assert 'import org.spotube.PluginAbility' in build_file
+          assert 'import org.spotube.plugin_interfaces.' in js_entry
+          assert not any("dev.krtirtho" in path.read_text() for path in root.rglob("*.kt*") if path.is_file())
           assert (root / "gradlew").stat().st_mode & 0o111
           assert not any(marker in str(path) for path in root.rglob("*") for marker in ("{{", "__packagePath__", "__moduleName__", "__serviceClassName__"))
 
