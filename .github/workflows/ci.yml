@@ -31,6 +31,7 @@ jobs:
             --repository=https://github.com/team-spotube/spotube-plugin-template \
             --bugs=https://github.com/team-spotube/spotube-plugin-template/issues \
             --capabilities=metadata,audio,lyrics,scrobble \
+            --cookie-domains=example.com,*.example.com \
             --output=spotube_plugin_ci_test
           jbang create@. \
             --service=ci_lyrics \

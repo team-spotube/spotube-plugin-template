@@ -11,6 +11,7 @@
 - Default selected APIs are Metadata + Audio. The `--capabilities` option accepts a comma-separated list; interactive input accepts names or menu numbers.
 - Derived values: `moduleName = spotube_plugin_<serviceId>`, service class is PascalCase, and `packageName = <authorGroup>.<moduleName>`.
 - API selections map to `spotubePlugin.abilities` and conditionally control source/test paths plus imports/bindings in `js.kt`. Host permissions stay NETWORK_REQUESTS, PERSISTENT_STORAGE, and WEBVIEW.
+- `--cookie-domains` (optional, comma-separated) renders `cookieDomains` in `spotubePlugin {}` (`emptyList()` when omitted). Entries are hostnames or `*.`-wildcards, validated with the same syntax rules as the Spotube app. Generated projects target plugin API `0.1.0` and Spotube Gradle plugin `0.2.0`, the first version with `cookieDomains`.
 - Generated metadata uses the `spotubePlugin {}` DSL. Do not reintroduce BuildKonfig, a generated cookie constant, or `plugin.json`.
 - Keep API implementations as TODO stubs matching the sibling `spotube/plugin_interfaces` contracts. Lyrics uses `LyricsAPI.getLyrics(MetadataTrack)` and Scrobble uses `ScrobbleAPI.scrobble(ScrobbleTrack)`.
 

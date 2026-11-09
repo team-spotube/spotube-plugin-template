@@ -20,6 +20,7 @@ import java.util.concurrent.Callable
 
 private val serviceIdPattern = Regex("[a-z][a-z0-9]*(?:_[a-z0-9]+)*")
 private val packageSegmentPattern = Regex("[A-Za-z_][A-Za-z0-9_]*")
+private val hostLabelPattern = Regex("[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?")
 private val conditionalPathTokens = setOf(
     "{{includeMetadata}}",
     "{{includeAudio}}",
@@ -47,6 +48,7 @@ private data class PluginConfig(
     val repositoryUrl: String,
     val bugsUrl: String,
     val features: Set<PluginFeature>,
+    val cookieDomains: List<String>,
 ) {
     val moduleName: String = "spotube_plugin_$serviceId"
     val serviceClassName: String = serviceId.split('_').joinToString("") { part ->
@@ -85,7 +87,12 @@ private data class PluginConfig(
         "contactKotlin" to jsonStringContent(contact),
         "repositoryUrlKotlin" to jsonStringContent(repositoryUrl),
         "bugsUrlKotlin" to jsonStringContent(bugsUrl),
+        "cookieDomainsKotlin" to cookieDomainsKotlin(),
     )
+
+    fun cookieDomainsKotlin(): String =
+        if (cookieDomains.isEmpty()) "emptyList()"
+        else cookieDomains.joinToString(prefix = "listOf(", postfix = ")") { "\"$it\"" }
 }
 
 @Command(name = "create", description = ["Scaffold a Spotube Kotlin Multiplatform provider plugin."])
@@ -115,6 +122,17 @@ class GenerateKmpPluginCommand : Callable<Int> {
         description = ["Comma-separated plugin APIs: metadata,audio,lyrics,scrobble (default: metadata,audio)."],
     )
     var capabilities: MutableList<String> = mutableListOf()
+
+    @field:Option(
+        names = ["--cookie-domains"],
+        paramLabel = "LIST",
+        split = ",",
+        description = [
+            "Comma-separated hosts whose WebView cookies the plugin reads or whose pages it scripts, " +
+                "for example accounts.example.com,*.example.com (default: none).",
+        ],
+    )
+    var cookieDomains: MutableList<String>? = null
 
     @field:Option(names = ["-o", "--output"], paramLabel = "DIR", description = ["Output project directory (default: ./<moduleName>)."])
     var output: Path? = null
@@ -153,6 +171,7 @@ class GenerateKmpPluginCommand : Callable<Int> {
         println("✅ Generated Spotube Plugin Scaffold: '${config.moduleName}'")
         println("📁 Directory: $destination")
         println("🔌 APIs: ${config.features.joinToString { it.optionName }}")
+        println("🍪 Cookie domains: ${config.cookieDomains.ifEmpty { listOf("none") }.joinToString()}")
         println("📄 Files: $generatedFileCount")
         println()
         println("Next steps:")
@@ -206,6 +225,16 @@ class GenerateKmpPluginCommand : Callable<Int> {
             parseFeatures(entered.ifBlank { "metadata,audio" }.split(','))
         }
 
+        val cookieDomainValues = when {
+            cookieDomains != null -> cookieDomains!!
+            canDeriveBugsNonInteractively -> emptyList()
+            else -> {
+                println("WebView login: list the hosts whose cookies you read with getCookies() or whose pages")
+                println("you run evaluateJavaScript() on, e.g. accounts.example.com or *.example.com.")
+                reader.readLine("Cookie domains (comma-separated, blank for none) []: ").split(',')
+            }
+        }.map { it.trim().lowercase(Locale.ROOT).removeSuffix(".") }.filter { it.isNotEmpty() }.distinct()
+
         return PluginConfig(
             serviceId = serviceId,
             authorGroup = authorGroup,
@@ -214,6 +243,7 @@ class GenerateKmpPluginCommand : Callable<Int> {
             repositoryUrl = repositoryValue,
             bugsUrl = bugsValue,
             features = selectedFeatures,
+            cookieDomains = cookieDomainValues,
         )
     }
 }
@@ -298,6 +328,20 @@ private fun validate(config: PluginConfig) {
     validateHttpUrl(config.repositoryUrl, "repository")
     validateHttpUrl(config.bugsUrl, "bugs")
     require(config.features.isNotEmpty()) { "select at least one plugin API capability." }
+    config.cookieDomains.forEach(::validateCookieDomain)
+}
+
+// Same syntax rules as the Spotube app. The app additionally rejects wildcards over public
+// suffixes (*.co.uk, *.github.io) using the Public Suffix List, which isn't checked here.
+private fun validateCookieDomain(value: String) {
+    val wildcard = value.startsWith("*.")
+    val host = value.removePrefix("*.")
+    val valid = host.isNotEmpty() && host.length <= 253 &&
+        host.split('.').all { hostLabelPattern.matches(it) } &&
+        (!wildcard || '.' in host)
+    require(valid) {
+        "cookie domain '$value' must be a hostname like example.com or *.example.com (no scheme, port, or path)."
+    }
 }
 
 private fun validateHttpUrl(value: String, fieldName: String) {
@@ -416,6 +460,10 @@ private fun validateGeneratedProject(destination: File, config: PluginConfig) {
     }
     require("bugs = \"${jsonStringContent(config.bugsUrl)}\"" in moduleBuildFile) {
         "generated Spotube plugin bugs URL does not match the requested URL."
+    }
+
+    require("cookieDomains = ${config.cookieDomainsKotlin()}" in moduleBuildFile) {
+        "generated Spotube plugin cookieDomains do not match the requested cookie domains."
     }
 
     val classFile = File(moduleRoot, "src/commonMain/kotlin/${config.packagePath}/core/${config.serviceClassName}.kt")

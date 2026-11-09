@@ -14,7 +14,7 @@ plugins {
 spotubePlugin {
     name = "{{serviceDisplayNameKotlin}}"
     version = "0.1.0"
-    apiVersion = "0.0.1"
+    apiVersion = "0.1.0"
     description = "Spotube music service provider plugin for {{serviceDisplayNameKotlin}}"
     author = "{{authorGroupKotlin}}"
     contact = "{{contactKotlin}}"
@@ -31,6 +31,10 @@ spotubePlugin {
         {{#includeLyrics}}PluginAbility.LYRICS,{{/includeLyrics}}
         {{#includeScrobble}}PluginAbility.SCROBBLE,{{/includeScrobble}}
     )
+    // Hosts whose WebView cookies this plugin reads (webViewAPI.getCookies) or whose pages it runs
+    // scripts on (webViewAPI.evaluateJavaScript). Spotube refuses both for any other host.
+    // "example.com" matches only that host; "*.example.com" matches its subdomains, not example.com.
+    cookieDomains = {{cookieDomainsKotlin}}
     license = "AGPL-3.0-or-later"
 }
 

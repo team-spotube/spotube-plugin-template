@@ -25,6 +25,8 @@ class RealCoreAPI(
         TODO("Return the provider's support/help text")
 
     override suspend fun login() {
+        // For WebView login, read cookies with webViewAPI.getCookies(url) only for hosts listed in
+        // cookieDomains (spotubePlugin {} in build.gradle.kts); other hosts are refused.
         TODO("Implement provider login")
     }
 
